@@ -21,7 +21,7 @@ func BenchmarkMyAnalyzer(b *testing.B) {
 }
 ```
 
-For per-package granularity, use [RunPerPackage] instead:
+For per-package granularity of the `testdata`, use `RunPerPackage` instead:
 
 ```go
 func BenchmarkMyAnalyzer(b *testing.B) {

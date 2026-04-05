@@ -26,7 +26,7 @@
 //	    analysisbench.Run(b, testdata, myAnalyzer, "mypackage/...")
 //	}
 //
-// For per-package granularity, use [RunPerPackage] instead:
+// For per-package granularity of the testdata, use [RunPerPackage] instead:
 //
 //	func BenchmarkMyAnalyzer(b *testing.B) {
 //	    testdata := analysisbench.TestData()

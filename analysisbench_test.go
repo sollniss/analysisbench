@@ -42,12 +42,12 @@ func runAnalysis(t *testing.T, a *analysis.Analyzer, pkgs []*packages.Package) a
 	t.Helper()
 	res, err := checker.Analyze([]*analysis.Analyzer{a}, pkgs, nil)
 	if err != nil {
-		t.Fatalf("Analyze(%s): %v", a.Name, err)
+		t.Fatalf("Analyze(%s): %s", a.Name, err.Error())
 	}
 	var result analysisResult
 	for _, act := range res.Roots {
 		if act.Err != nil {
-			t.Fatalf("error analyzing %s: %v", act, act.Err)
+			t.Fatalf("error analyzing %s: %s", act, act.Err.Error())
 		}
 		for _, d := range act.Diagnostics {
 			result.diags = append(result.diags, diagString(act.Package.Fset, d))
@@ -89,7 +89,7 @@ func runViaTemplates(t *testing.T, a *analysis.Analyzer, pkgs []*packages.Packag
 		})
 
 		if _, err := a.Run(pass); err != nil {
-			t.Fatalf("error analyzing %s: %v", pass.Pkg.Path(), err)
+			t.Fatalf("error analyzing %s: %s", pass.Pkg.Path(), err.Error())
 		}
 
 		for _, d := range diags {
@@ -179,7 +179,7 @@ func TestBasic(t *testing.T) {
 	noopAnalyzer := &analysis.Analyzer{
 		Name: "noop",
 		Doc:  "does nothing",
-		Run: func(pass *analysis.Pass) (any, error) {
+		Run: func(*analysis.Pass) (any, error) {
 			return nil, nil
 		},
 	}
@@ -544,7 +544,7 @@ func Foo() {}
 	origObjectFactsLen := len(passTempl.objectFacts)
 	origPackageFactsLen := len(passTempl.packageFacts)
 
-	pkgKey := packageFactKey{passTempl.pkg.Types, reflect.TypeOf((*testFact)(nil))}
+	pkgKey := packageFactKey{passTempl.pkg.Types, reflect.TypeFor[*testFact]()}
 
 	for i := range 3 {
 		pass, objFacts, pkgFacts := passTempl.buildPass(factAnalyzer, nopReport)
@@ -565,7 +565,7 @@ func Foo() {}
 		}
 
 		// Run the analyzer and overwrite the facts with a new label.
-		if _, err := factAnalyzer.Run(pass); err != nil {
+		if _, err = factAnalyzer.Run(pass); err != nil {
 			t.Fatalf("iteration %d: Run: %v", i, err)
 		}
 
@@ -680,7 +680,7 @@ func Baz() {}
 }
 
 // TestBenchmark exercises Run and RunPerPackage through
-// testing.Benchmark to verify it does not panic or fatal.
+// [testing.Benchmark] to verify it does not panic or fatal.
 func TestBenchmark(t *testing.T) {
 	dir := WriteFiles(t, map[string]string{
 		"a/a.go": `package a
@@ -700,17 +700,17 @@ func Bar() {}
 	noopAnalyzer := &analysis.Analyzer{
 		Name: "noop",
 		Doc:  "does nothing",
-		Run: func(pass *analysis.Pass) (any, error) {
+		Run: func(*analysis.Pass) (any, error) {
 			return nil, nil
 		},
 	}
 
-	t.Run("Run", func(t *testing.T) {
+	t.Run("Run", func(*testing.T) {
 		testing.Benchmark(func(b *testing.B) {
 			Run(b, dir, noopAnalyzer, "./...")
 		})
 	})
-	t.Run("RunPerPackage", func(t *testing.T) {
+	t.Run("RunPerPackage", func(*testing.T) {
 		testing.Benchmark(func(b *testing.B) {
 			RunPerPackage(b, dir, noopAnalyzer, "./...")
 		})
@@ -726,7 +726,7 @@ func TestError(t *testing.T) {
 	errorAnalyzer := &analysis.Analyzer{
 		Name: "error",
 		Doc:  "returns an error",
-		Run: func(pass *analysis.Pass) (any, error) {
+		Run: func(*analysis.Pass) (any, error) {
 			return nil, errors.New("analysis error")
 		},
 	}
@@ -789,7 +789,7 @@ func (g *Graph[T]) Link(a, b string) {}
 	noopAnalyzer := &analysis.Analyzer{
 		Name: "noop",
 		Doc:  "does nothing",
-		Run: func(pass *analysis.Pass) (any, error) {
+		Run: func(*analysis.Pass) (any, error) {
 			return nil, nil
 		},
 	}
@@ -799,7 +799,7 @@ func (g *Graph[T]) Link(a, b string) {}
 		Requires: []*analysis.Analyzer{
 			inspect.Analyzer,
 		},
-		Run: func(pass *analysis.Pass) (any, error) {
+		Run: func(*analysis.Pass) (any, error) {
 			return nil, nil
 		},
 	}

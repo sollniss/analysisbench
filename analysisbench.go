@@ -252,10 +252,10 @@ func WriteFiles(t testing.TB, filemap map[string]string) string {
 	gopath := t.TempDir()
 	for name, content := range filemap {
 		filename := filepath.Join(gopath, "src", name)
-		if err := os.MkdirAll(filepath.Dir(filename), 0o777); err != nil {
+		if err := os.MkdirAll(filepath.Dir(filename), 0o750); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(filename, []byte(content), 0o666); err != nil {
+		if err := os.WriteFile(filename, []byte(content), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -297,7 +297,7 @@ func Run(b *testing.B, dir string, a *analysis.Analyzer, patterns ...string) {
 	for b.Loop() {
 		for _, pt := range templates {
 			pass, _, _ := pt.buildPass(a, nopReport)
-			if _, err := a.Run(pass); err != nil {
+			if _, err = a.Run(pass); err != nil {
 				b.Fatalf("error analyzing %s: %s", pass.Pkg.Path(), err.Error())
 			}
 		}
@@ -330,7 +330,7 @@ func RunPerPackage(b *testing.B, dir string, a *analysis.Analyzer, patterns ...s
 		b.Run(pt.pkg.PkgPath, func(b *testing.B) {
 			for b.Loop() {
 				pass, _, _ := pt.buildPass(a, nopReport)
-				if _, err := a.Run(pass); err != nil {
+				if _, err = a.Run(pass); err != nil {
 					b.Fatalf("error analyzing %s: %s", pass.Pkg.Path(), err.Error())
 				}
 			}
@@ -347,7 +347,7 @@ func loadPackages(dir string, patterns ...string) ([]*packages.Package, error) {
 	// Undocumented module mode: if dir contains a go.mod, switch to module mode.
 	if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
 		gowork := filepath.Join(dir, "go.work")
-		if _, err := os.Stat(gowork); err != nil {
+		if _, err = os.Stat(gowork); err != nil {
 			gowork = "off"
 		}
 		env = []string{"GO111MODULE=on", "GOPROXY=off", "GOWORK=" + gowork}
@@ -369,7 +369,7 @@ func loadPackages(dir string, patterns ...string) ([]*packages.Package, error) {
 
 	// Fail fast if any named package couldn't be loaded at all.
 	for _, pkg := range pkgs {
-		if len(pkg.Errors) > 0 {
+		if pkg.Name == "" {
 			return nil, fmt.Errorf("failed to load %q: Errors=%v", pkg.PkgPath, pkg.Errors)
 		}
 	}

@@ -161,12 +161,12 @@ func precompute(tb testing.TB, a *analysis.Analyzer, pkgs []*packages.Package) [
 	if len(a.Requires) > 0 {
 		res, err := checker.Analyze(a.Requires, pkgs, nil)
 		if err != nil {
-			tb.Fatalf("pre-computing dependency analyzers: %v", err)
+			tb.Fatalf("pre-computing dependency analyzers: %s", err.Error())
 		}
 		for act := range res.All() {
 			if act.Err != nil {
-				tb.Fatalf("error in dependency analyzer %s on %s: %v",
-					act.Analyzer.Name, act.Package.PkgPath, act.Err)
+				tb.Fatalf("error in dependency analyzer %s on %s: %s",
+					act.Analyzer.Name, act.Package.PkgPath, act.Err.Error())
 			}
 			depResults[pkgAnalyzerKey{act.Package, act.Analyzer}] = act.Result
 		}
@@ -185,12 +185,12 @@ func precompute(tb testing.TB, a *analysis.Analyzer, pkgs []*packages.Package) [
 	if len(a.FactTypes) > 0 {
 		res, err := checker.Analyze([]*analysis.Analyzer{a}, pkgs, nil)
 		if err != nil {
-			tb.Fatalf("pre-computing facts: %v", err)
+			tb.Fatalf("pre-computing facts: %s", err.Error())
 		}
 		for act := range res.All() {
 			if act.Err != nil {
-				tb.Fatalf("error in analyzer %s on %s: %v",
-					act.Analyzer.Name, act.Package.PkgPath, act.Err)
+				tb.Fatalf("error in analyzer %s on %s: %s",
+					act.Analyzer.Name, act.Package.PkgPath, act.Err.Error())
 			}
 			if act.Analyzer == a && act.IsRoot {
 				fs := &factSnapshot{
@@ -280,7 +280,7 @@ func Run(b *testing.B, dir string, a *analysis.Analyzer, patterns ...string) {
 
 	pkgs, err := loadPackages(dir, patterns...)
 	if err != nil {
-		b.Fatalf("loading %s: %v", patterns, err)
+		b.Fatalf("loading %s: %s", patterns, err.Error())
 	}
 
 	if !a.RunDespiteErrors {
@@ -298,7 +298,7 @@ func Run(b *testing.B, dir string, a *analysis.Analyzer, patterns ...string) {
 		for _, pt := range templates {
 			pass, _, _ := pt.buildPass(a, nopReport)
 			if _, err := a.Run(pass); err != nil {
-				b.Fatalf("error analyzing %s: %v", pass.Pkg.Path(), err)
+				b.Fatalf("error analyzing %s: %s", pass.Pkg.Path(), err.Error())
 			}
 		}
 	}
@@ -313,7 +313,7 @@ func RunPerPackage(b *testing.B, dir string, a *analysis.Analyzer, patterns ...s
 
 	pkgs, err := loadPackages(dir, patterns...)
 	if err != nil {
-		b.Fatalf("loading %s: %v", patterns, err)
+		b.Fatalf("loading %s: %s", patterns, err.Error())
 	}
 
 	if !a.RunDespiteErrors {
@@ -331,7 +331,7 @@ func RunPerPackage(b *testing.B, dir string, a *analysis.Analyzer, patterns ...s
 			for b.Loop() {
 				pass, _, _ := pt.buildPass(a, nopReport)
 				if _, err := a.Run(pass); err != nil {
-					b.Fatalf("error analyzing %s: %v", pass.Pkg.Path(), err)
+					b.Fatalf("error analyzing %s: %s", pass.Pkg.Path(), err.Error())
 				}
 			}
 		})
@@ -369,9 +369,8 @@ func loadPackages(dir string, patterns ...string) ([]*packages.Package, error) {
 
 	// Fail fast if any named package couldn't be loaded at all.
 	for _, pkg := range pkgs {
-		if pkg.Name == "" {
-			return nil, fmt.Errorf("failed to load %q: Errors=%v",
-				pkg.PkgPath, pkg.Errors)
+		if len(pkg.Errors) > 0 {
+			return nil, fmt.Errorf("failed to load %q: Errors=%v", pkg.PkgPath, pkg.Errors)
 		}
 	}
 
